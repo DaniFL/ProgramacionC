@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "gcc - Compilar y depurar el archivo activo",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "C/C++: gcc compilar archivo activo"
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [
+        ""
+      ],
+      "stopAtEntry": true,
+      "cwd": "/Users/danii/Library/CloudStorage/OneDrive-FundaciónUniversitariaSanPabloCEU/Máquina Virtual/Sistemas/ProgramacionC/EjerciciosClase/Ejercicio3.3",
+      "environment": [],
+      "program": "/Users/danii/Library/CloudStorage/OneDrive-FundaciónUniversitariaSanPabloCEU/Máquina Virtual/Sistemas/ProgramacionC/EjerciciosClase/Ejercicio3.3/build/Debug/outDebug",
+      "internalConsoleOptions": "openOnSessionStart",
+      "MIMode": "gdb",
+      "externalConsole": true
+    }
+  ]
+}
