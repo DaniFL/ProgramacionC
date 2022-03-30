@@ -8,7 +8,7 @@
 int cuenta = 0; 
 int turno = 0; 
 bool estado[2];
-sem_t mutex;
+sem_t s1;
 
     void * funcionSuma(void * args){
         for (int i = 0; i <1000; i++){
@@ -18,9 +18,9 @@ sem_t mutex;
                 //while(estado[1] && turno == 1){}
                 //No hace nada 
                 //sección critico 
-                sem_wait(&mutex); //Wait
+                sem_wait(&s1); //Wait
                 cuenta++;
-                sem_post(&mutex); //Signal 
+                sem_post(&s1); //Signal 
                 estado[0] = false;
                 //resto
     //}
@@ -35,9 +35,9 @@ void * funcionResta(void * args){
                 //while(estado[0] && turno == 0){}
                 //No hace nada 
                 //sección critico 
-                sem_wait(&mutex); //Wait
+                sem_wait(&s1); //Wait
                 cuenta--;
-                sem_post(&mutex); //Signal
+                sem_post(&s1); //Signal
                 estado[1] = false;
                 //resto
             //}
@@ -46,7 +46,7 @@ void * funcionResta(void * args){
 
 void main(){
     
-    sem_init(&mutex, 0, 1); //Inicializamos semáforo.
+    sem_init(&s1, 0, 1); //Inicializamos semáforo.
     pthread_t suma, resta; // variable tio thread
     pthread_create(&suma, NULL, funcionSuma, NULL);
     pthread_create(&resta, NULL, funcionResta, NULL);
