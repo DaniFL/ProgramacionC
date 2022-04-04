@@ -48,3 +48,6 @@ void main(){
     pthread_join(resta, NULL);
     printf("%d\n", cuenta);
 }
+
+
+
