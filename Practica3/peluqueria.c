@@ -5,79 +5,84 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-sem_t aforo, peluquero, cliente, mutex, sofa, sentado;
-// aforo = Semáforo para controlar el aforo (personas dentro de peluquería)
-// peluquero = Semáforo para controlar el peluquero (silla)
-// cliente = Semáforo para controlar la silla
-// mutex = Semáforo para controlar variables comunes
-// posible semaforo silla = cliente cortando pelo
+sem_t aforo, peluquero, silla, sofa, sentado;
+// aforo = Semáforo para controlar el aforo (personas dentro de peluquería).
+// peluquero = Semáforo para controlar el peluquero.
+// silla = Semáforo para controlar la silla (1 persona).
+// sofa = Semáforo para controlar el sofa (5 personas).
+// sentado = Semáforo para controlar el cliente mierntras el peluquero le corta el pelo.
 
-// mutex wait inicio y post final método
 // peluquero y cliente inicializados a 0
-// aforo  = 20 permite 20 personas en peluqueria
-// sofa = cliente = 5 personas sentadas en el sofa
+// aforo = permite 20 personas en peluqueria
 // problema por capas aforo-sofa-silla-peluquero.
-// en sofa se tienen que meter 5 personas seguidas
-// en funcion peluquero hay que dormir al peluquero, despertarlo con un cliente, dormir al cliente y despertarlo con el peluquero
+// en funcion peluquero, hay que dormir al peluquero, despertarlo con un cliente.
 // tiempo que tarda en cortar pelo == sleep (x seconds)
+
+void *funcionCliente(void *args)
+{
+    int clienteId = *(int *)args;
+
+    sem_wait(&aforo); // espera a que haya lugar en la peluquería
+
+    printf("Cliente %d entra a la peluqueria\n", clienteId);
+    // fflush(stdout); // reinicia contador
+
+    sem_wait(&sofa); // espera a que haya sitio en el sofa (5 personas)
+    printf("Cliente %d pasa al sofa\n", clienteId);
+
+    sem_wait(&silla); // espera a que haya sitio en la silla (1 persona)
+    printf("Cliente %d pasa a la silla, dejando libre asiento en el sofa\n", clienteId);
+    sem_post(&sofa); // desbloquea sofa
+
+    printf("Cliente %d está sentado en la silla\n", clienteId);
+    sem_post(&peluquero); // desbloquea peluquero
+    printf("Cliente %d despierta al peluquero para que le corte el pelo\n", clienteId);
+    sem_wait(&sentado); // espera a que haya sentado el cliente
+    printf("Cliente %d termina de cortarse el pelo\n", clienteId);
+
+    sem_post(&silla); // desbloquea silla
+    printf("Cliente %d se levanta de la silla\n", clienteId);
+    printf("Cliente %d sale de la peluqueria\n", clienteId);
+    sem_post(&aforo); // desbloquea aforo
+    // fflush(stdout);   // reinicia contador
+}
 
 void *funcionPeluquero(void *args)
 {
     for (int i = 0; i < 50; i++)
     {
-        sem_wait(&peluquero);
-        printf("El peluquero está cortando el pelo a un cliente\n");
-        sleep(3);
-        sem_post(&sentado);
+        sem_wait(&peluquero); // bloquea al peluquero hasta que haya un cliente.
+        printf("El peluquero está cortando el pelo al cliente %d\n", i);
+        sleep(2);           // tiempo que tarda en cortar el pelo
+        sem_post(&sentado); // desbloquea al cliente tras haberse cortado el pelo.
     }
-}
-
-void *funcionCliente(void *args)
-{
-    int numero = *(int *)args;
-    sem_wait(&aforo); // Permite entrada peluquería <20
-    printf("Cliente %d entra a la peluquería\n", numero);
-    fflush(stdout);
-    sem_wait(&sofa); // Permite entrada sofa <= 5
-    printf("Cliente %d se ha sentado en el sofá\n", numero);
-    sem_wait(&cliente);                                           // Permite sentarse en silla peluquero <= 1
-    printf("Cliente %d pasa a la silla del peluquero\n", numero); // llega cliente a silla
-    sem_post(&sofa);                                              // Se libera sitio en el sofa
-    sem_post(&peluquero);                                         // Desbloquea a peluquero
-    sem_wait(&sentado);                                           // Se bloquea al cliente mientras se le corta el pelo.
-    printf("peluquero ya ha terminado de cortar el pelo\n");
-    sem_post(&cliente); // cliente se levanta de la silla.
-    printf("Cliente %d se levanta de la silla del peluqero\n", numero);
-    sem_post(&aforo); // Cliente se va de la peluquería.
-    printf("Cliente %d sale de la peluquería\n", numero);
-    fflush(stdout);
 }
 
 void main()
 {
     // inicializar semáforos
-    sem_init(&aforo, 0, 20);
-    sem_init(&peluquero, 0, 0);
-    sem_init(&sentado, 0, 1);
-    sem_init(&cliente, 0, 1);
-    sem_init(&mutex, 0, 1);
-    sem_init(&sofa, 0, 5);
+    sem_init(&aforo, 0, 20);    // permite la entrada a 20 personas en la peluquería.
+    sem_init(&peluquero, 0, 0); // peluquero etado inicial a 0, ya que necesita de un cliente para despertar.
+    sem_init(&silla, 0, 1);     // silla inicialmente disponible para el primer cliente.
+    sem_init(&sentado, 0, 0);   // inicialiado a 0 ya que bloquea al cliente mientras se corta el pelo.
+    sem_init(&sofa, 0, 5);      // permite sentarse a 5 personas en el sofa.
+
     // crear 50 hilos (clientes)
     pthread_t clientes[50];
-    // inicialzar hilos
+
+    // inicializar hilos de clientes
     for (int i = 0; i < 50; i++)
     {
         pthread_create(&clientes[i], NULL, funcionCliente, (void *)&i);
+        sleep(1);
     }
-    // unir hilos
+    // unir hilos clientes
     for (int i = 0; i < 50; i++)
     {
         pthread_join(clientes[i], NULL);
     }
 
-    // crear hilo peluquero
-    pthread_t peluquero;
-    pthread_create(&peluquero, NULL, funcionPeluquero, NULL);
-    // unir hilo peluquero
-    pthread_join(peluquero, NULL);
+    pthread_t peluquero;                                      // crear hilo peluquero
+    pthread_create(&peluquero, NULL, funcionPeluquero, NULL); // inicializar hilo peluquero
+    pthread_join(peluquero, NULL);                            // unir hilo peluquero
 }
