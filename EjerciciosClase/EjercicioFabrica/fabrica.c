@@ -15,14 +15,16 @@ void *funcionLinea1(void *args)
     while (pieza1 < 20)
     {
         sem_wait(&control);
+        sem_wait(&s1);
         sem_wait(&A);
         sem_wait(&B);
-        sem_wait(&s1);
+
         pieza1++;
         printf("Pieza 1: %d\n", pieza1);
-        sem_post(&s2);
+
         sem_post(&A);
         sem_post(&B);
+        sem_post(&s2);
         sem_post(&control);
     }
 }
@@ -32,36 +34,40 @@ void *funcionLinea2(void *args)
     while (pieza2 < 20)
     {
         sem_wait(&control);
+        sem_wait(&s2);
         sem_wait(&B);
         sem_wait(&C);
-        sem_wait(&s2);
+
         pieza2++;
         printf("Pieza 2: %d\n", pieza2);
-        sem_post(&s3);
+
         sem_post(&B);
         sem_post(&C);
+        sem_post(&s3);
         sem_post(&control);
     }
 }
 void *funcionLinea3(void *args)
 {
-
     int pieza3 = 0;
     while (pieza3 < 20)
     {
         sem_wait(&control);
+        sem_wait(&s3);
         sem_wait(&C);
         sem_wait(&A);
-        sem_wait(&s3);
+
         pieza3++;
         printf("Pieza 3: %d\n", pieza3);
-        sem_post(&s1);
-        sem_post(&A);
+
         sem_post(&C);
+        sem_post(&A);
+
         sem_wait(&mutex);
         numeroProductos++;
         printf("Productos terminados: %d\n", numeroProductos);
         sem_post(&mutex);
+        sem_post(&s1);
         sem_post(&control);
     }
 }
@@ -79,7 +85,7 @@ void main()
     sem_init(&control, 0, 2);
 
     // crear 4 hilos
-    pthread_t linea1, linea2, linea3, mutex;
+    pthread_t linea1, linea2, linea3;
 
     // inicializar hilos
     pthread_create(&linea1, NULL, funcionLinea1, NULL);
